@@ -8,9 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
@@ -24,7 +21,7 @@ public class RideCommand implements CommandExecutor {
     private final List<Entity> entites = new ArrayList<>();
     private Player ridedPlayer;
     private final ArrayList<Entity> ridenEntities = new ArrayList<>();
-    private final ArrayList<Entity> entitiesSpawned =new ArrayList<>();
+    private final ArrayList<Entity> entitiesSpawned = new ArrayList<>();
 
     public RideCommand(SupremeRiding plugin) {
         this.plugin = plugin;
@@ -35,49 +32,54 @@ public class RideCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) return false;
         Player player = (Player) sender;
-        if(!player.hasPermission("customride.ride")) {
+        if (!player.hasPermission("customride.ride")) {
             player.sendMessage("§cYou don't have permissions to access to this command!");
             return true;
         }
         if (args.length != 1) return true;
-        try {
-            EntityType entityType = getEntityByName(args[0].toUpperCase());
-            ridedPlayer = Bukkit.getPlayer(args[0]);
+        EntityType entityType = getEntityByName(args[0].toUpperCase());
+        ridedPlayer = Bukkit.getPlayer(args[0]);
 
-            if (ridedPlayer != null) {
-                if (ridedPlayer == player) {
-                    player.sendMessage("§cYou can't ride yourself!");
-                    return true;
-                }
+        if (entityType == null || entity == null ) {
+            player.sendMessage("§cPlease use §a/ride <player/entity>");
+            return true;
+        }
 
-                ridedPlayer.addPassenger(player);
-                ridedPlayer.setGlowing(true);
-                Bukkit.getScheduler().runTaskTimer(plugin, new Consumer<BukkitTask>() {
-                    @Override
-                    public void accept(BukkitTask task) {
-                        if (ridedPlayer.getPassengers().isEmpty()) {
-                            ridedPlayer.setGlowing(false);
+        if (ridedPlayer != null) {
+            if (ridedPlayer == player) {
+                player.sendMessage("§cYou can't ride yourself!");
 
-
-                        }
-                    }
-                }, 0, 4L);
                 return true;
             }
 
-            entity = player.getWorld().spawnEntity(player.getLocation(), entityType);
-            entity.setPassenger(player);
-            entity.setInvulnerable(true);
-            entites.add(entity);
-            entity.setGlowing(true);
-            entitiesSpawned.add(entity);
 
-            if(entitiesSpawned.size() > 1) {
-                entitiesSpawned.get(0).remove();
-                entitiesSpawned.remove(0);
-            }
+            ridedPlayer.addPassenger(player);
+            ridedPlayer.setGlowing(true);
+            Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+                if (ridedPlayer.getPassengers().isEmpty()) {
+                    ridedPlayer.setGlowing(false);
+                }
+            }, 0, 4L);
+            return true;
+        }
 
-            ridenEntities.add(entity);
+        entity = player.getWorld().spawnEntity(player.getLocation(), entityType);
+        entity.setPassenger(player);
+        entity.setInvulnerable(true);
+        entites.add(entity);
+        entity.setGlowing(true);
+        entitiesSpawned.add(entity);
+
+
+        if (entitiesSpawned.size() > 1) {
+            entitiesSpawned.get(0).remove();
+            entitiesSpawned.remove(0);
+        } else {
+            player.sendMessage("§cPlease use §a/ride <player/entity>");
+            return true;
+        }
+
+        ridenEntities.add(entity);
 
             Bukkit.getScheduler().runTaskTimer(plugin, new Consumer<BukkitTask>() {
                 @Override
@@ -91,13 +93,8 @@ public class RideCommand implements CommandExecutor {
                     }
                 }
             }, 0, 4L);
-
-        } catch (NullPointerException exception) {
-            player.sendMessage("§cPlease use §a/ride §a<entity/player>");
+            return true;
         }
-        return true;
-
-    }
 
     public EntityType getEntityByName(String name) {
         for (EntityType type : EntityType.values()) {
