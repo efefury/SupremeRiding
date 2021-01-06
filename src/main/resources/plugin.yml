@@ -1,0 +1,13 @@
+name: SupremeRiding
+version: 1.0
+main: net.supremeriding.SupremeRiding
+api-version: 1.16
+authors: [ efefury ]
+description: Ride other player or entities through the command
+commands:
+  ride:
+    description: Ride other player or entities through the command
+    usage: /ride
+    permission: customride.ride
+    permission-message: §cYou don't have permissions to access to this command!
+
