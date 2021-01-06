@@ -1,7 +1,9 @@
 package net.supremeriding.commands;
 
+import com.google.common.base.Enums;
 import net.supremeriding.SupremeRiding;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,11 +38,14 @@ public class RideCommand implements CommandExecutor {
             player.sendMessage("§cYou don't have permissions to access to this command!");
             return true;
         }
-        if (args.length != 1) return true;
-        EntityType entityType = getEntityByName(args[0].toUpperCase());
+        if(args.length != 1) {
+            player.sendMessage("§cPlease use §a/ride <player/entity>");
+            return true;
+        }
+        EntityType entityType = Enums.getIfPresent(EntityType.class, args[0]).orNull();
         ridedPlayer = Bukkit.getPlayer(args[0]);
 
-        if (entityType == null || entity == null ) {
+        if (entityType == null) {
             player.sendMessage("§cPlease use §a/ride <player/entity>");
             return true;
         }
