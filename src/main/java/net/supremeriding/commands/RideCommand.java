@@ -3,7 +3,6 @@ package net.supremeriding.commands;
 import com.google.common.base.Enums;
 import net.supremeriding.SupremeRiding;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -38,26 +37,16 @@ public class RideCommand implements CommandExecutor {
             player.sendMessage("§cYou don't have permissions to access to this command!");
             return true;
         }
-        if(args.length != 1) {
+        if (args.length != 1) {
             player.sendMessage("§cPlease use §a/ride <player/entity>");
             return true;
         }
-        EntityType entityType = Enums.getIfPresent(EntityType.class, args[0]).orNull();
         ridedPlayer = Bukkit.getPlayer(args[0]);
-
-        if (entityType == null) {
-            player.sendMessage("§cPlease use §a/ride <player/entity>");
-            return true;
-        }
-
         if (ridedPlayer != null) {
             if (ridedPlayer == player) {
                 player.sendMessage("§cYou can't ride yourself!");
-
                 return true;
             }
-
-
             ridedPlayer.addPassenger(player);
             ridedPlayer.setGlowing(true);
             Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -67,14 +56,21 @@ public class RideCommand implements CommandExecutor {
             }, 0, 4L);
             return true;
         }
-
+        EntityType entityType = Enums.getIfPresent(EntityType.class, args[0].toUpperCase()).orNull();
+        if (entityType == null) {
+            player.sendMessage("§cPlease use §a/ride <player/entity>");
+            return true;
+        }
+        if (entityType == EntityType.ENDER_DRAGON || entityType == EntityType.WITHER) {
+            player.sendMessage("§cYou can't spawn an enderdragon or wither!");
+            return true;
+        }
         entity = player.getWorld().spawnEntity(player.getLocation(), entityType);
-        entity.setPassenger(player);
+        entity.addPassenger(player);
         entity.setInvulnerable(true);
         entites.add(entity);
         entity.setGlowing(true);
         entitiesSpawned.add(entity);
-
 
         if (entitiesSpawned.size() > 1) {
             entitiesSpawned.get(0).remove();
@@ -85,28 +81,17 @@ public class RideCommand implements CommandExecutor {
         }
 
         ridenEntities.add(entity);
+        Bukkit.getScheduler().runTaskTimer(plugin, new Consumer<BukkitTask>() {
+            @Override
+            public void accept(BukkitTask task) {
+                entity.setRotation(player.getLocation().getYaw(), player.getLocation().getPitch());
 
-            Bukkit.getScheduler().runTaskTimer(plugin, new Consumer<BukkitTask>() {
-                @Override
-                public void accept(BukkitTask task) {
-                    entity.setRotation(player.getLocation().getYaw(), player.getLocation().getPitch());
-
-                    if (entity.getPassengers().isEmpty()) {
-                        ridenEntities.get(0).remove();
-                        ridenEntities.remove(0);
-                        task.cancel();
-                    }
-                }
-            }, 0, 4L);
-            return true;
-        }
-
-    public EntityType getEntityByName(String name) {
-        for (EntityType type : EntityType.values()) {
-            if (type.name().equalsIgnoreCase(name)) {
-                return type;
+                if (!entity.getPassengers().isEmpty()) return;
+                ridenEntities.get(0).remove();
+                ridenEntities.remove(0);
+                task.cancel();
             }
-        }
-        return null;
+        }, 0, 3L);
+        return true;
     }
 }
